@@ -133,7 +133,7 @@ def filter_vertices(geometry: Union[Polygon, MultiPolygon], min_angle: float) ->
         raise ValueError(f"Unsupported geometry type: {type(geometry)}")
 
 def read_gpkg_polygons(file_path, min_angle):
-    polygons = []
+    original_polygons = []
     filtered_polygons = []
     total_spikes_removed = 0
     try:
@@ -144,33 +144,30 @@ def read_gpkg_polygons(file_path, min_angle):
                     filtered_geom, spikes_removed = filter_vertices(geom, min_angle)
                     total_spikes_removed += spikes_removed
                     if not filtered_geom.is_empty:
-                        polygons.append([list(filtered_geom.exterior.coords)])
-                        filtered_polygons.append(filtered_geom)
+                        original_polygons.append([list(geom.exterior.coords) for geom in (geom.geoms if geom.geom_type == 'MultiPolygon' else [geom])])
+                        filtered_polygons.append([list(filtered_geom.exterior.coords) for filtered_geom in (filtered_geom.geoms if filtered_geom.geom_type == 'MultiPolygon' else [filtered_geom])])
     except Exception as e:
         print(f"An error occurred while reading the GeoPackage: {e}")
-    return polygons, filtered_polygons, total_spikes_removed
+    return original_polygons, filtered_polygons, total_spikes_removed
 
-def plot_polygons(polygons):
-    fig, ax = plt.subplots()
-    patches = []
+def plot_polygons(original_polygons, filtered_polygons, min_angle):
+    fig, axs = plt.subplots(1, 2, figsize=(15, 7))
+
+    def add_polygons(ax, polygons, title):
+        patches = []
+        for poly in polygons:
+            for ring in poly:
+                patches.append(MplPolygon(ring, closed=True))
+        collection = PatchCollection(patches, facecolors='#ffd000', edgecolors='black', linewidths=1.0, alpha=0.85)
+        ax.add_collection(collection)
+        ax.autoscale()
+        ax.set_aspect('equal')
+        ax.set_title(title)
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
     
-    for poly in polygons:
-        for ring in poly:
-            patches.append(MplPolygon(ring, closed=True))
-    
-    collection = PatchCollection(patches, facecolors='cyan', edgecolors='blue', linewidths=1.5, alpha=0.5)
-    ax.add_collection(collection)
-    
-    ax.autoscale()
-    ax.set_aspect('equal')
-    
-    # Adding titles and labels
-    ax.set_title("Polygon Plot from GeoPackage")
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
-    
-    # Adding gridlines
-    ax.grid(True, linestyle='--', linewidth=0.5)
+    add_polygons(axs[0], original_polygons, "Original")
+    add_polygons(axs[1], filtered_polygons, f"Unspiked ({min_angle} degrees)")
     
     plt.show()
 
@@ -183,9 +180,8 @@ def write_gpkg_polygons(filtered_polygons, input_path, output_path):
             new_schema = {'geometry': 'MultiPolygon', 'properties': meta['schema']['properties']}
 
             with fiona.open(output_path, 'w', crs=src.crs, driver='GPKG', schema=new_schema) as dst:
-                for feature, geom in zip(src, filtered_polygons):
-                    if isinstance(geom, Polygon):
-                        geom = MultiPolygon([geom])
+                for feature, geom_list in zip(src, filtered_polygons):
+                    geom = MultiPolygon([Polygon(coords) for coords in geom_list])
                     feature['geometry'] = mapping(geom)
                     dst.write({'geometry': feature['geometry'], 'properties': feature['properties']})
     except Exception as e:
@@ -199,11 +195,11 @@ def main(gpkg_path, min_angle):
             raise ValueError(f"The path '{gpkg_path}' is not a file.")
         
         print(f"Reading GeoPackage file: {gpkg_path}")
-        polygons, filtered_polygons, total_spikes_removed = read_gpkg_polygons(gpkg_path, min_angle)
-        if not polygons:
+        original_polygons, filtered_polygons, total_spikes_removed = read_gpkg_polygons(gpkg_path, min_angle)
+        if not original_polygons:
             print("No geometries found.")
             return
-        plot_polygons(polygons)
+        plot_polygons(original_polygons, filtered_polygons, min_angle)
         
         output_path = f"{os.path.splitext(gpkg_path)[0]}_unspiked{os.path.splitext(gpkg_path)[1]}"
         write_gpkg_polygons(filtered_polygons, gpkg_path, output_path)
@@ -213,6 +209,6 @@ def main(gpkg_path, min_angle):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    gpkg_path = "spiky-polygons.gpkg"  # Replace with your actual file path
-    min_angle = 10.0  # Set your minimum angle threshold here
+    gpkg_path = "spiky-polygons.gpkg" 
+    min_angle = 10.0  
     main(gpkg_path, min_angle)
