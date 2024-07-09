@@ -2,6 +2,8 @@
 
 This script processes polygons in a GeoPackage file, removing spikes by filtering out vertices that form angles sharper than a specified threshold.
 
+![Original and Unspiked Polygons](img/example1.png)
+
 ## Features
 
 - Reads polygons from a GeoPackage file.
@@ -52,7 +54,3 @@ flowchart TD
     I --> J[Write Filtered Polygons to New GeoPackage]
     J --> K[End]
 ```
-
-## Example Image
-
-![Original and Unspiked Polygons](img/example1.png)
