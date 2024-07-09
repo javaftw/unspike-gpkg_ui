@@ -2,7 +2,7 @@
 
 This script processes polygons in a GeoPackage file, removing spikes by filtering out vertices that form angles sharper than a specified threshold.
 
-![Original and Unspiked Polygons](img/example1.png)
+![Original and Unspiked Polygons](img/example.png)
 
 ## Features
 
