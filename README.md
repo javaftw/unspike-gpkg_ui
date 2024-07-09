@@ -1,4 +1,4 @@
-# GeoPackage Polygon Spike Remover
+# Unspike gpkg (Stand-alone script version with UI)
 
 This script processes polygons in a GeoPackage file, removing spikes by filtering out vertices that form angles sharper than a specified threshold.
 
