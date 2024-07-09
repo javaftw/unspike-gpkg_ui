@@ -151,7 +151,7 @@ def read_gpkg_polygons(file_path, min_angle):
         print(f"An error occurred while reading the GeoPackage: {e}")
     return original_polygons, filtered_polygons, total_spikes_removed
 
-def plot_polygons(original_polygons, filtered_polygons):
+def plot_polygons(original_polygons, filtered_polygons, min_angle):
     fig, axs = plt.subplots(1, 2, figsize=(15, 7))
 
     def add_polygons(ax, polygons, title):
@@ -169,7 +169,7 @@ def plot_polygons(original_polygons, filtered_polygons):
         ax.set_ylabel("Latitude")
     
     add_polygons(axs[0], original_polygons, "Original")
-    add_polygons(axs[1], filtered_polygons, "Unspiked")
+    add_polygons(axs[1], filtered_polygons, f"Unspiked ({min_angle} degrees)")
     
     plt.show()
 
@@ -201,7 +201,7 @@ def main(gpkg_path, min_angle):
         if not original_polygons:
             print("No geometries found.")
             return
-        plot_polygons(original_polygons, filtered_polygons)
+        plot_polygons(original_polygons, filtered_polygons, min_angle)
         
         output_path = f"{os.path.splitext(gpkg_path)[0]}_unspiked{os.path.splitext(gpkg_path)[1]}"
         write_gpkg_polygons(filtered_polygons, gpkg_path, output_path)
