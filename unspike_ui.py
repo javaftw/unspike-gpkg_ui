@@ -1,3 +1,4 @@
+import argparse
 import os
 import warnings
 from typing import Tuple, Union
@@ -150,7 +151,7 @@ def read_gpkg_polygons(file_path, min_angle):
         print(f"An error occurred while reading the GeoPackage: {e}")
     return original_polygons, filtered_polygons, total_spikes_removed
 
-def plot_polygons(original_polygons, filtered_polygons, min_angle):
+def plot_polygons(original_polygons, filtered_polygons):
     fig, axs = plt.subplots(1, 2, figsize=(15, 7))
 
     def add_polygons(ax, polygons, title):
@@ -158,16 +159,17 @@ def plot_polygons(original_polygons, filtered_polygons, min_angle):
         for poly in polygons:
             for ring in poly:
                 patches.append(MplPolygon(ring, closed=True))
-        collection = PatchCollection(patches, facecolors='#ffd000', edgecolors='black', linewidths=1.0, alpha=0.85)
+        collection = PatchCollection(patches, facecolors='cyan', edgecolors='blue', linewidths=1.5, alpha=0.5)
         ax.add_collection(collection)
         ax.autoscale()
         ax.set_aspect('equal')
         ax.set_title(title)
+        ax.grid(True, linestyle='--', linewidth=0.5)
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
     
-    add_polygons(axs[0], original_polygons, "Original")
-    add_polygons(axs[1], filtered_polygons, f"Unspiked ({min_angle} degrees)")
+    add_polygons(axs[0], original_polygons, "Original Polygons")
+    add_polygons(axs[1], filtered_polygons, "Filtered Polygons")
     
     plt.show()
 
@@ -199,7 +201,7 @@ def main(gpkg_path, min_angle):
         if not original_polygons:
             print("No geometries found.")
             return
-        plot_polygons(original_polygons, filtered_polygons, min_angle)
+        plot_polygons(original_polygons, filtered_polygons)
         
         output_path = f"{os.path.splitext(gpkg_path)[0]}_unspiked{os.path.splitext(gpkg_path)[1]}"
         write_gpkg_polygons(filtered_polygons, gpkg_path, output_path)
@@ -209,6 +211,11 @@ def main(gpkg_path, min_angle):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    gpkg_path = "spiky-polygons.gpkg" 
-    min_angle = 10.0  
-    main(gpkg_path, min_angle)
+    parser = argparse.ArgumentParser(
+        description="Remove spikes from polygons by filtering out vertices forming angles sharper than a threshold angle.")
+    parser.add_argument('-i', '--input', required=True, help='Path to the input GeoPackage file.')
+    parser.add_argument('-a', '--angle', required=True, type=float, help='Minimum angle threshold (degrees).')
+    
+    args = parser.parse_args()
+
+    main(args.input, args.angle)
