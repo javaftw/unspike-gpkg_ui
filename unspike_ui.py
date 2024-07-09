@@ -159,7 +159,7 @@ def plot_polygons(original_polygons, filtered_polygons):
         for poly in polygons:
             for ring in poly:
                 patches.append(MplPolygon(ring, closed=True))
-        collection = PatchCollection(patches, facecolors='cyan', edgecolors='blue', linewidths=1.5, alpha=0.5)
+        collection = PatchCollection(patches, facecolors='#ffd000', edgecolors='black', linewidths=1.0, alpha=0.75)
         ax.add_collection(collection)
         ax.autoscale()
         ax.set_aspect('equal')
@@ -168,8 +168,8 @@ def plot_polygons(original_polygons, filtered_polygons):
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
     
-    add_polygons(axs[0], original_polygons, "Original Polygons")
-    add_polygons(axs[1], filtered_polygons, "Filtered Polygons")
+    add_polygons(axs[0], original_polygons, "Original")
+    add_polygons(axs[1], filtered_polygons, "Unspiked")
     
     plt.show()
 
