@@ -52,3 +52,7 @@ flowchart TD
     I --> J[Write Filtered Polygons to New GeoPackage]
     J --> K[End]
 ```
+
+## Example Image
+
+![Original and Unspiked Polygons](img/example1.png)
